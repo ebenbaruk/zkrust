@@ -1,0 +1,12 @@
+[package]
+name = "zkrust-polynomials"
+description = "Polynomial arithmetic, NTT, and KZG commitments"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+zkrust-fields = { workspace = true }
+zkrust-curves = { workspace = true }
+rand = { workspace = true }

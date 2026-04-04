@@ -1,0 +1,16 @@
+[package]
+name = "zkrust-groth16"
+description = "Groth16 zk-SNARK prover and verifier"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+zkrust-fields = { workspace = true }
+zkrust-curves = { workspace = true }
+zkrust-polynomials = { workspace = true }
+zkrust-r1cs = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+bincode = { workspace = true }

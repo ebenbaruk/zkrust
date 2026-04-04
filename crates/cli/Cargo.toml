@@ -1,0 +1,20 @@
+[package]
+name = "zkrust-cli"
+description = "CLI tool for zkrust proof generation and verification"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "zkrust"
+path = "src/main.rs"
+
+[dependencies]
+zkrust-groth16 = { workspace = true }
+zkrust-r1cs = { workspace = true }
+zkrust-fields = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+bincode = { workspace = true }
+hex = { workspace = true }

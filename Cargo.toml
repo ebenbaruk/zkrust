@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/fields",
+    "crates/curves",
+    "crates/polynomials",
+    "crates/r1cs",
+    "crates/groth16",
+    "crates/cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+repository = "https://github.com/elibenbaruk/zkrust"
+
+[workspace.dependencies]
+# Internal crates
+zkrust-fields = { path = "crates/fields" }
+zkrust-curves = { path = "crates/curves" }
+zkrust-polynomials = { path = "crates/polynomials" }
+zkrust-r1cs = { path = "crates/r1cs" }
+zkrust-groth16 = { path = "crates/groth16" }
+
+# External dependencies
+rayon = "1.10"
+criterion = { version = "0.5", features = ["html_reports"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+rand = "0.8"
+clap = { version = "4", features = ["derive"] }
+bincode = "1"
+hex = "0.4"
