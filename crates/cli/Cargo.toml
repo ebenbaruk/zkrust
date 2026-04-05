@@ -18,3 +18,5 @@ clap = { workspace = true }
 serde = { workspace = true }
 bincode = { workspace = true }
 hex = { workspace = true }
+rand = { workspace = true }
+zkrust-curves = { workspace = true }
