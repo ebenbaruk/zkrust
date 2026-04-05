@@ -63,29 +63,29 @@ impl Fp6 {
         let gamma_1 = Fp2::new(
             Fp::from_raw([
                 0x99E39557176F553D,
-                0xB78CC310C2D3E10E,
-                0xA6B0BD4AFC1B20F5,
-                0x2615F9B0F50A0C0E,
+                0xB78CC310C2C3330C,
+                0x4C0BEC3CF559B143,
+                0x2FB347984F7911F7,
             ]),
             Fp::from_raw([
-                0x4F49FFFD8BFD0000,
-                0xDC39573399E34607,
-                0x1D1ADDE6DC65AE80,
-                0x09EE3E9BC7B6C80C,
+                0x1665D51C640FCBA2,
+                0x32AE2A1D0B7C9DCE,
+                0x4BA4CC8BD75A0794,
+                0x16C9E55061EBAE20,
             ]),
         );
         let gamma_2 = Fp2::new(
             Fp::from_raw([
-                0xCEE3DEBFAB2D7063,
-                0x8C4944C69A2B3B39,
-                0xDDB5D0F87CE6D3A0,
-                0x2324B5BF2B1A6B5A,
+                0x848A1F55921EA762,
+                0xD33365F7BE94EC72,
+                0x80F3C0B75A181E84,
+                0x05B54F5E64EEA801,
             ]),
             Fp::from_raw([
-                0x94C27CCBED40FE5D,
-                0xB76C59614E0644CF,
-                0xCD3B1E96BF3E0B6F,
-                0x05C7ECDDAC1A4B7A,
+                0xC13B4711CD2B8126,
+                0x3685D2EA1BDEC763,
+                0x9F3A80B03B0B1C92,
+                0x2C145EDBE7FD8AEE,
             ]),
         );
 
@@ -229,11 +229,7 @@ impl FieldElement for Fp6 {
 
 impl fmt::Debug for Fp6 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Fp6({:?} + {:?}*v + {:?}*v²)",
-            self.c0, self.c1, self.c2
-        )
+        write!(f, "Fp6({:?} + {:?}*v + {:?}*v²)", self.c0, self.c1, self.c2)
     }
 }
 

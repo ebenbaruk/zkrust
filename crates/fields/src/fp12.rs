@@ -37,16 +37,16 @@ impl Fp12 {
         // Multiply c1 by the Frobenius constant for Fp12: ξ^((p-1)/6)
         let gamma = Fp2::new(
             crate::fp::Fp::from_raw([
-                0xAF9BA69633144907,
-                0xCA0B202753E0ECAC,
-                0x110EEFDA21240000,
-                0x0C42021D6BC65500,
+                0xD60B35DADCC9E470,
+                0x5C521E08292F2176,
+                0xE8B99FDD76E68B60,
+                0x1284B71C2865A7DF,
             ]),
             crate::fp::Fp::from_raw([
-                0x7A17CAA950AD28D7,
-                0x1F6AC17AE15521B9,
-                0x334CF11213F5D847,
-                0x07B0BEEDAB336640,
+                0xCA5CF05F80F362AC,
+                0x747992778EEEC7E5,
+                0xA6327CFE12150B8E,
+                0x246996F3B4FAE7E6,
             ]),
         );
 
@@ -61,9 +61,9 @@ impl Fp12 {
         self.square()
     }
 
-    /// Exponentiation by the BN parameter x = 4965661367071055258.
+    /// Exponentiation by the BN parameter x = 4965661367192848881.
     pub fn exp_by_x(&self) -> Self {
-        let x: u64 = 4965661367071055258;
+        let x: u64 = 4965661367192848881;
         let mut result = Self::ONE;
         let mut base = *self;
         let mut e = x;

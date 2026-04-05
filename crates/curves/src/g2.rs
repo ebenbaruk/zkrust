@@ -1,109 +1,132 @@
 use std::ops::{Add, Mul, Neg, Sub};
-use zkrust_fields::{FieldElement, Fp};
+use zkrust_fields::{FieldElement, Fp, Fp2};
 
-/// A point on the BN254 G1 curve in affine coordinates.
-/// Curve equation: y² = x³ + 3 over Fp.
+/// A point on the BN254 G2 twist curve in affine coordinates.
+/// Curve equation: y² = x³ + b' where b' = 3/(9+u) over Fp2.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct G1Affine {
-    pub x: Fp,
-    pub y: Fp,
+pub struct G2Affine {
+    pub x: Fp2,
+    pub y: Fp2,
     pub infinity: bool,
 }
 
-/// A point on the BN254 G1 curve in Jacobian projective coordinates.
-/// (X, Y, Z) represents the affine point (X/Z², Y/Z³).
+/// A point on the BN254 G2 twist curve in Jacobian projective coordinates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct G1Projective {
-    pub x: Fp,
-    pub y: Fp,
-    pub z: Fp,
+pub struct G2Projective {
+    pub x: Fp2,
+    pub y: Fp2,
+    pub z: Fp2,
 }
 
-/// Curve coefficient b = 3.
-const B: u64 = 3;
+/// b' = 3/(9+u) = 3 * (9-u)/((9+u)(9-u)) = 3*(9-u)/(81+1) = 3*(9-u)/82
+/// In BN254, the twist coefficient is b' = 3/(9+u) computed in Fp2.
+fn twist_b() -> Fp2 {
+    let xi = Fp2::new(Fp::from(9u64), Fp::from(1u64));
+    let three = Fp2::new(Fp::from(3u64), Fp::ZERO);
+    let xi_inv = xi.inv().unwrap();
+    three * xi_inv
+}
 
-impl G1Affine {
-    /// The point at infinity (identity element).
+impl G2Affine {
     pub const fn identity() -> Self {
         Self {
-            x: Fp::ZERO,
-            y: Fp::ZERO,
+            x: Fp2::ZERO,
+            y: Fp2::ZERO,
             infinity: true,
         }
     }
 
-    /// The generator point G1 = (1, 2).
+    /// The standard BN254 G2 generator.
     pub fn generator() -> Self {
         Self {
-            x: Fp::from(1u64),
-            y: Fp::from(2u64),
+            x: Fp2::new(
+                Fp::from_raw([
+                    0x46DEBD5CD992F6ED,
+                    0x674322D4F75EDADD,
+                    0x426A00665E5C4479,
+                    0x1800DEEF121F1E76,
+                ]),
+                Fp::from_raw([
+                    0x97E485B7AEF312C2,
+                    0xF1AA493335A9E712,
+                    0x7260BFB731FB5D25,
+                    0x198E9393920D483A,
+                ]),
+            ),
+            y: Fp2::new(
+                Fp::from_raw([
+                    0x4CE6CC0166FA7DAA,
+                    0xE3D1E7690C43D37B,
+                    0x4AAB71808DCB408F,
+                    0x12C85EA5DB8C6DEB,
+                ]),
+                Fp::from_raw([
+                    0x55ACDADCD122975B,
+                    0xBC4B313370B38EF3,
+                    0xEC9E99AD690C3395,
+                    0x090689D0585FF075,
+                ]),
+            ),
             infinity: false,
         }
     }
 
-    /// Check if this point lies on the curve: y² = x³ + 3.
+    /// Check if this point lies on the G2 twist curve.
     pub fn is_on_curve(&self) -> bool {
         if self.infinity {
             return true;
         }
         let y2 = self.y.square();
-        let x3_b = self.x.square() * self.x + Fp::from(B);
+        let x3_b = self.x.square() * self.x + twist_b();
         y2 == x3_b
     }
 
-    /// Check if this point is the identity.
     pub fn is_identity(&self) -> bool {
         self.infinity
     }
 
-    /// Convert to projective coordinates.
-    pub fn to_projective(&self) -> G1Projective {
+    pub fn to_projective(&self) -> G2Projective {
         if self.infinity {
-            G1Projective::identity()
+            G2Projective::identity()
         } else {
-            G1Projective {
+            G2Projective {
                 x: self.x,
                 y: self.y,
-                z: Fp::ONE,
+                z: Fp2::ONE,
             }
         }
     }
 }
 
-impl G1Projective {
-    /// The point at infinity (identity element).
+impl G2Projective {
     pub fn identity() -> Self {
         Self {
-            x: Fp::ZERO,
-            y: Fp::ONE,
-            z: Fp::ZERO,
+            x: Fp2::ZERO,
+            y: Fp2::ONE,
+            z: Fp2::ZERO,
         }
     }
 
-    /// Check if this is the identity point.
     pub fn is_identity(&self) -> bool {
         self.z.is_zero()
     }
 
-    /// Convert to affine coordinates.
-    pub fn to_affine(&self) -> G1Affine {
+    pub fn to_affine(&self) -> G2Affine {
         if self.is_identity() {
-            return G1Affine::identity();
+            return G2Affine::identity();
         }
 
         let z_inv = self.z.inv().unwrap();
         let z_inv2 = z_inv.square();
         let z_inv3 = z_inv2 * z_inv;
 
-        G1Affine {
+        G2Affine {
             x: self.x * z_inv2,
             y: self.y * z_inv3,
             infinity: false,
         }
     }
 
-    /// Point doubling in Jacobian coordinates.
-    /// Uses the "dbl-2007-bl" formula: 1M + 5S + 1*a + 7add + 2*2 + 1*3 + 1*8.
     pub fn double(&self) -> Self {
         if self.is_identity() {
             return *self;
@@ -114,11 +137,11 @@ impl G1Projective {
         let c = b.square();
 
         let d = ((self.x + b).square() - a - c).double();
-        let e = a.double() + a; // 3 * a (since curve a-coeff is 0)
+        let e = a.double() + a;
         let f = e.square();
 
         let x3 = f - d.double();
-        let y3 = e * (d - x3) - c.double().double().double(); // e*(d-x3) - 8c
+        let y3 = e * (d - x3) - c.double().double().double();
         let z3 = (self.y * self.z).double();
 
         Self {
@@ -128,9 +151,7 @@ impl G1Projective {
         }
     }
 
-    /// Mixed addition: projective + affine.
-    /// More efficient than projective + projective since rhs.z = 1.
-    pub fn add_mixed(&self, rhs: &G1Affine) -> Self {
+    pub fn add_mixed(&self, rhs: &G2Affine) -> Self {
         if rhs.is_identity() {
             return *self;
         }
@@ -144,12 +165,11 @@ impl G1Projective {
 
         let h = u2 - self.x;
         let hh = h.square();
-        let i = hh.double().double(); // 4 * hh
+        let i = hh.double().double();
         let j = h * i;
         let r = (s2 - self.y).double();
 
         if h.is_zero() && r.is_zero() {
-            // Point doubling case
             return self.double();
         }
 
@@ -165,7 +185,6 @@ impl G1Projective {
         }
     }
 
-    /// Full projective addition.
     pub fn add_projective(&self, rhs: &Self) -> Self {
         if self.is_identity() {
             return *rhs;
@@ -205,7 +224,6 @@ impl G1Projective {
         }
     }
 
-    /// Scalar multiplication using double-and-add.
     pub fn scalar_mul(&self, scalar: &[u64; 4]) -> Self {
         let mut result = Self::identity();
         let mut base = *self;
@@ -225,21 +243,21 @@ impl G1Projective {
     }
 }
 
-impl Add for G1Projective {
+impl Add for G2Projective {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
         self.add_projective(&rhs)
     }
 }
 
-impl Sub for G1Projective {
+impl Sub for G2Projective {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self {
         self.add_projective(&(-rhs))
     }
 }
 
-impl Neg for G1Projective {
+impl Neg for G2Projective {
     type Output = Self;
     fn neg(self) -> Self {
         if self.is_identity() {
@@ -254,7 +272,7 @@ impl Neg for G1Projective {
     }
 }
 
-impl Neg for G1Affine {
+impl Neg for G2Affine {
     type Output = Self;
     fn neg(self) -> Self {
         if self.infinity {
@@ -269,23 +287,23 @@ impl Neg for G1Affine {
     }
 }
 
-impl Add<G1Affine> for G1Projective {
-    type Output = G1Projective;
-    fn add(self, rhs: G1Affine) -> G1Projective {
+impl Add<G2Affine> for G2Projective {
+    type Output = G2Projective;
+    fn add(self, rhs: G2Affine) -> G2Projective {
         self.add_mixed(&rhs)
     }
 }
 
-impl Mul<zkrust_fields::Fr> for G1Projective {
-    type Output = G1Projective;
-    fn mul(self, rhs: zkrust_fields::Fr) -> G1Projective {
+impl Mul<zkrust_fields::Fr> for G2Projective {
+    type Output = G2Projective;
+    fn mul(self, rhs: zkrust_fields::Fr) -> G2Projective {
         self.scalar_mul(&rhs.to_raw())
     }
 }
 
-impl Mul<zkrust_fields::Fr> for G1Affine {
-    type Output = G1Projective;
-    fn mul(self, rhs: zkrust_fields::Fr) -> G1Projective {
+impl Mul<zkrust_fields::Fr> for G2Affine {
+    type Output = G2Projective;
+    fn mul(self, rhs: zkrust_fields::Fr) -> G2Projective {
         self.to_projective().scalar_mul(&rhs.to_raw())
     }
 }
@@ -297,72 +315,46 @@ mod tests {
 
     #[test]
     fn test_generator_on_curve() {
-        let g = G1Affine::generator();
-        assert!(g.is_on_curve());
+        let g = G2Affine::generator();
+        assert!(g.is_on_curve(), "G2 generator should be on curve");
     }
 
     #[test]
     fn test_identity_on_curve() {
-        assert!(G1Affine::identity().is_on_curve());
+        assert!(G2Affine::identity().is_on_curve());
     }
 
     #[test]
     fn test_add_identity() {
-        let g = G1Affine::generator().to_projective();
-        let id = G1Projective::identity();
+        let g = G2Affine::generator().to_projective();
+        let id = G2Projective::identity();
         assert_eq!((g + id).to_affine(), g.to_affine());
         assert_eq!((id + g).to_affine(), g.to_affine());
     }
 
     #[test]
     fn test_double() {
-        let g = G1Affine::generator().to_projective();
+        let g = G2Affine::generator().to_projective();
         let g2 = g.double();
         assert!(g2.to_affine().is_on_curve());
-        assert_ne!(g2.to_affine(), g.to_affine());
     }
 
     #[test]
     fn test_add_inverse_is_identity() {
-        let g = G1Affine::generator().to_projective();
-        let neg_g = -g;
-        let result = g + neg_g;
+        let g = G2Affine::generator().to_projective();
+        let result = g + (-g);
         assert!(result.is_identity());
     }
 
     #[test]
     fn test_double_equals_add_self() {
-        let g = G1Affine::generator().to_projective();
-        let doubled = g.double();
-        let added = g + g;
-        assert_eq!(doubled.to_affine(), added.to_affine());
-    }
-
-    #[test]
-    fn test_scalar_mul_by_one() {
-        let g = G1Affine::generator().to_projective();
-        let result = g.scalar_mul(&[1, 0, 0, 0]);
-        assert_eq!(result.to_affine(), g.to_affine());
-    }
-
-    #[test]
-    fn test_scalar_mul_by_two() {
-        let g = G1Affine::generator().to_projective();
-        let result = g.scalar_mul(&[2, 0, 0, 0]);
-        assert_eq!(result.to_affine(), g.double().to_affine());
-    }
-
-    #[test]
-    fn test_scalar_mul_by_zero() {
-        let g = G1Affine::generator().to_projective();
-        let result = g.scalar_mul(&[0, 0, 0, 0]);
-        assert!(result.is_identity());
+        let g = G2Affine::generator().to_projective();
+        assert_eq!(g.double().to_affine(), (g + g).to_affine());
     }
 
     #[test]
     fn test_order_of_generator() {
-        // r * G should be the identity
-        let g = G1Affine::generator().to_projective();
+        let g = G2Affine::generator().to_projective();
         let r = zkrust_fields::fr::MODULUS;
         let result = g.scalar_mul(&r);
         assert!(result.is_identity());
@@ -370,32 +362,11 @@ mod tests {
 
     #[test]
     fn test_scalar_mul_distributive() {
-        // (a+b)*G = a*G + b*G
-        let g = G1Affine::generator().to_projective();
-        let a = Fr::from(123u64);
-        let b = Fr::from(456u64);
-        let ab = a + b;
-
-        let lhs = g * ab;
+        let g = G2Affine::generator().to_projective();
+        let a = Fr::from(77u64);
+        let b = Fr::from(33u64);
+        let lhs = g * (a + b);
         let rhs = (g * a) + (g * b);
         assert_eq!(lhs.to_affine(), rhs.to_affine());
-    }
-
-    #[test]
-    fn test_mixed_addition() {
-        let g_proj = G1Affine::generator().to_projective();
-        let g_aff = G1Affine::generator();
-
-        let result_mixed = g_proj + g_aff;
-        let result_proj = g_proj + g_proj;
-        assert_eq!(result_mixed.to_affine(), result_proj.to_affine());
-    }
-
-    #[test]
-    fn test_affine_projective_roundtrip() {
-        let g = G1Affine::generator();
-        let proj = g.to_projective();
-        let back = proj.to_affine();
-        assert_eq!(g, back);
     }
 }

@@ -81,8 +81,7 @@ impl Fp {
             let mut carry: u64 = (product >> 64) as u64;
 
             for j in 1..4 {
-                let product =
-                    (m as u128) * (MODULUS[j] as u128) + (t[j] as u128) + (carry as u128);
+                let product = (m as u128) * (MODULUS[j] as u128) + (t[j] as u128) + (carry as u128);
                 t[j - 1] = product as u64;
                 carry = (product >> 64) as u64;
             }
