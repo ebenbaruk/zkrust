@@ -25,3 +25,6 @@ Thumbs.db
 
 # Benchmark output
 /target/criterion/
+
+# Docs
+Docs/
