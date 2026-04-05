@@ -740,7 +740,9 @@ dependencies = [
  "bincode",
  "clap",
  "hex",
+ "rand",
  "serde",
+ "zkrust-curves",
  "zkrust-fields",
  "zkrust-groth16",
  "zkrust-r1cs",
@@ -768,6 +770,7 @@ name = "zkrust-groth16"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "criterion",
  "rand",
  "serde",
  "zkrust-curves",

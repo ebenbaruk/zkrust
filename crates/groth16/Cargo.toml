@@ -14,3 +14,10 @@ zkrust-r1cs = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 bincode = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "groth16_bench"
+harness = false
